@@ -17,34 +17,52 @@ def buscar_pokemon(text_field, ventana_principal):
 
     if num_pokemon != "":
 
-        ruta_json_str = 'jsons/' + str(num_pokemon)
-        ruta_json_path = Path(ruta_json_str)
+        ruta_datos_str = 'datos/' + str(num_pokemon)
+        ruta_datos_path = Path(ruta_datos_str)
         ruta_imagen_str = 'images/pokemons/' + str(num_pokemon)
         ruta_imagen_path = Path(ruta_imagen_str)
         tipo = ''
+        json_tipo = ''
 
-        if not (ruta_json_path.is_file() & ruta_imagen_path.is_file()):
+        if not (ruta_datos_path.is_file() & ruta_imagen_path.is_file()):
             solicitud = requests.get(api_base + api_base_pkmn + num_pokemon)
             json_pkmn = solicitud.json()
 
-            with open(ruta_json_str, 'w') as outfile:
-                json.dump(json_pkmn, outfile)
+            lista_jsons_stats = json_pkmn['stats']
+            nombre = json_pkmn['name']
+            peso = json_pkmn['weight'] / 10
+            print(nombre)
 
+            datos = 'Nombre: ' + nombre + '\nPeso: ' + repr(peso) + ' Kg\n'
+
+            cont = 1
             for type in json_pkmn['types']:
 
                 url = type['type']['url']
                 solicitud = requests.get(url)
                 json_tipo = solicitud.json()
 
-                cont = 1
                 for name in json_tipo['names']:
                     idioma = name['language']['name']
 
                     if idioma == 'es':
                         tipo = name['name']
 
-
+                datos += 'tipo' + str(cont) + ': ' +  tipo + '\n'
                 cont += 1
+
+            for stat in lista_jsons_stats:
+                nombre_stat = stat['stat']['name']
+                base_stat = str(stat['base_stat'])
+                esfuerzo = str(stat['effort'])
+
+                # añadir '\nEsfuerzo: ' + esfuerzo + a la linea siguiente para ver esfuerzo
+
+                datos += nombre_stat + ': ' + base_stat + '\n'
+
+            archivo_datos = open(ruta_datos_str, 'w')
+            archivo_datos.write(datos)
+            archivo_datos.close()
 
             url_json_sprite = json_pkmn['forms'][0]['url']
             solicitud = requests.get(url_json_sprite)
@@ -57,32 +75,16 @@ def buscar_pokemon(text_field, ventana_principal):
             archivo_foto.close()
 
 
-        with open(ruta_json_str) as json_file:
-            json_pkmn = json.load(json_file)
+        archivo_datos = open(ruta_datos_str, 'r')
+        datos = archivo_datos.read()
+        archivo_datos.close()
+
 
         archivo_image_byt = open(ruta_imagen_str, 'rb')
         image_byt = archivo_image_byt.read()
 
-        lista_jsons_stats = json_pkmn['stats']
-        nombre = json_pkmn['name']
-        peso = json_pkmn['weight'] / 10
-        print(nombre)
-
-        datos = 'Nombre: ' + nombre + '\nPeso: ' + repr(peso) + ' Kg\n'
-
-        for stat in lista_jsons_stats:
-            nombre_stat = stat['stat']['name']
-            base_stat = str(stat['base_stat'])
-            esfuerzo = str(stat['effort'])
-
-            #añadir '\nEsfuerzo: ' + esfuerzo + a la linea siguiente para ver esfuerzo
-
-            datos += nombre_stat + ': ' + base_stat  + '\n'
-
         image_b64 = base64.encodebytes(image_byt)
         photo_pkmn = tk.PhotoImage(data=image_b64)
-
-        #photo_pkmn.resize((96,96), Image.ANTIALIAS)
 
         label_sprite.configure(image = photo_pkmn)
         label_sprite.image = photo_pkmn
@@ -108,13 +110,8 @@ background.config(image=photo_pokedex)
 label_sprite=Label(ventana_principal, image = photo_pokeball, bg = 'light blue')
 label_sprite.place(x = 60, y = 220)
 
-
 label_datos = Label(ventana_principal,bg='light blue',fg='grey')
 label_datos.place(x = 210, y = 220)
-
-
-#label_texto = Label(ventana_principal, text = 'Introduzca \nnúmero de pokémon:')
-#label_texto.grid(row = 1,    column = 0)
 
 text_field_1 = Entry(ventana_principal,textvariable = 'caca' ,width = 3, bg = 'light blue',fg='grey')
 text_field_1.place(x = 175, y = 390)
